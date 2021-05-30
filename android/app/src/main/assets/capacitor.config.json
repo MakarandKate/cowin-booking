@@ -1,0 +1,6 @@
+{
+	"appId": "in.co.pecule.booking",
+	"appName": "cowin-booking",
+	"webDir": "www",
+	"bundledWebRuntime": false
+}
