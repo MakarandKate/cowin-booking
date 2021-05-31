@@ -1,5 +1,6 @@
 {
   "name": "cowin-booking",
   "integrations": {},
-  "type": "angular"
+  "type": "angular",
+  "npmClient": "npm"
 }

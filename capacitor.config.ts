@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appId: 'in.co.pecule.booking',
   appName: 'cowin-booking',
   webDir: 'www',
-  bundledWebRuntime: false
+  bundledWebRuntime: false,
 };
 
 export default config;
