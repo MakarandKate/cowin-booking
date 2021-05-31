@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import jsSHA from 'jssha'
+import { StorageService } from './storage.service';
 
 @Injectable({
   providedIn: 'root'
@@ -22,9 +23,13 @@ export class NetworkService {
 
   private TOKEN_ID='';
 
-  private TOKEN='';
+  private TOKEN=`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiIwZTNjMjdhYy0zODE5LTRhYzktOWNlYi04YzQ4YzEzNzVkMzMiLCJ1c2VyX2lkIjoiMGUzYzI3YWMtMzgxOS00YWM5LTljZWItOGM0OGMxMzc1ZDMzIiwidXNlcl90eXBlIjoiQkVORUZJQ0lBUlkiLCJtb2JpbGVfbnVtYmVyIjo3NTg4NzYzODYyLCJiZW5lZmljaWFyeV9yZWZlcmVuY2VfaWQiOjIxMzM4ODI3MTAzODAwLCJzZWNyZXRfa2V5IjoiYjVjYWIxNjctNzk3Ny00ZGYxLTgwMjctYTYzYWExNDRmMDRlIiwic291cmNlIjoiIiwidWEiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvOTAuMC40NDMwLjIxMiBTYWZhcmkvNTM3LjM2IiwiZGF0ZV9tb2RpZmllZCI6IjIwMjEtMDUtMzFUMDg6MTM6MDIuNDkyWiIsImlhdCI6MTYyMjQ0ODc4MiwiZXhwIjoxNjIyNDQ5NjgyfQ.UWKpfag_G7H0dL_88PNQcO9WMncQdJF9RjlkRUjxaHk`;
 
-  constructor() { }
+  private beneficiary=[];
+
+  constructor(
+    private storageService:StorageService,
+  ) { }
 
   setTokenId(tokenId:string){
     this.TOKEN_ID=tokenId;
@@ -45,6 +50,7 @@ export class NetworkService {
   }
 
   requestOtp(phone:string):Promise<string>{
+    this.storageService.set("phone",phone);
     return new Promise((resolve,reject)=>{
       
       let requestOptions:any = {
@@ -115,7 +121,7 @@ export class NetworkService {
 
   }
 
-  getBeneficiaries():Promise<string>{
+  getBeneficiaries():Promise<any>{
    
     return new Promise((resolve,reject)=>{
       
@@ -128,7 +134,9 @@ export class NetworkService {
       .then(response => response.text())
       .then(result => {
         try{
-          resolve(result);
+          let bObj=JSON.parse(result);
+          this.beneficiary=bObj.beneficiaries;
+          resolve(this.beneficiary);
         }catch(err){
           reject(err)
         }
