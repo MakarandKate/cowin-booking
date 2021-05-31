@@ -2,5 +2,6 @@
   "name": "cowin-booking",
   "integrations": {},
   "type": "angular",
-  "npmClient": "npm"
+  "npmClient": "npm",
+  "linuxAndroidStudioPath": "/snap/android-studio/101/android-studio/bin/studio.sh"
 }
