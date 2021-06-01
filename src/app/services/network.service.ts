@@ -210,50 +210,77 @@ export class NetworkService {
     });
   }
 
-  getVaccineType(): Promise<any>{
-    return new Promise((resolve,reject)=>{
-        resolve(['covisheild','covaxin','sputvik', "any"]);
-    });
-  }
-
-  getVaccineFeeType(): Promise<any>{
-    return new Promise((resolve,reject)=>{
-        resolve(['paid','free', "any"]);
-    });
-  }
-
-  
-
-  saveData(collectionArray){
-    this.storageService.set("collection",collectionArray);
-  }
-
-  getDistrictCalender(token:string, districtId, vaccineType){
+  getDistrictCalender(token:string, userData){
     // district_id={0}&date={1}
 
-    return new Promise((resolve,reject)=>{
-      let date=Util.getDate();
-      let requestOptions:any = {
-        method: 'GET',
-        headers: this.getAuthHeaders(token),
-        redirect: 'follow'
-      };
-      fetch(this.URLS.calenderDistrict+`?district_id=${districtId}&date=${date}&vaccine=${vaccineType}`, requestOptions)
-      .then(response => response.text())
-      .then(result => {
-        console.log(result);
-        try{
-          let bObj=JSON.parse(result);
-          resolve(bObj);
-        }catch(err){
-          
-          reject(err)
+    return new Promise(async (resolve,reject)=>{
+      try{
+        let date=Util.getDate();
+        let vaccineType='';
+        if(userData.vaccine_type!="ANY"){
+          vaccineType='&vaccine='+userData.vaccine_type;
         }
-      })
-      .catch(error => {
-        
-        reject(error);
-      })
+        let requestOptions:any = {
+          method: 'GET',
+          headers: this.getAuthHeaders(token),
+          redirect: 'follow'
+        };
+        let resultArray=[];
+        for(let i=0;i<userData.location_dtls.length;i++){
+          let apiResponse=await fetch(this.URLS.calenderDistrict+`?district_id=${userData.location_dtls[i].district_id}&date=${date}${vaccineType}`, requestOptions)
+          
+          if(apiResponse.status==200){
+            let responseObj=await apiResponse.json();
+            if(responseObj.centers){
+              resultArray.push(responseObj.centers);
+            }else{
+              reject("");
+            }
+          }else{
+            reject("");
+          }
+          
+          
+          
+        }
+        resolve(resultArray);
+      }catch(err){
+        reject(err);
+      }
+      
+      
+    });
+  }
+
+  getPinCalender(token:string, userData){
+    // district_id={0}&date={1}
+
+    return new Promise(async (resolve,reject)=>{
+      try{
+        let date=Util.getDate();
+        let vaccineType='';
+        if(userData.vaccine_type!="ANY"){
+          vaccineType='&vaccine='+userData.vaccine_type;
+        }
+        let requestOptions:any = {
+          method: 'GET',
+          headers: this.getAuthHeaders(token),
+          redirect: 'follow'
+        };
+        let resultArray=[];
+        for(let i=0;i<userData.location_dtls.length;i++){
+          let apiResponse=await fetch(this.URLS.calenderDistrict+`?district_id=${userData.location_dtls[i].district_id}&date=${date}${vaccineType}`, requestOptions)
+          
+          let responseObj=await apiResponse.json();
+          
+          resultArray.push(responseObj);
+        }
+        resolve(resultArray);
+      }catch(err){
+        reject(err);
+      }
+      
+      
     });
   }
 

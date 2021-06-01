@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Platform } from '@ionic/angular';
+import { StorageService } from './services/storage.service';
 
 declare var SMSReceive: any;
 
@@ -11,6 +12,7 @@ declare var SMSReceive: any;
 export class AppComponent {
   constructor(
     private platform:Platform,
+    private storageService : StorageService,
   ) {
     if(this.platform.is("hybrid")){
       SMSReceive.startWatch(
