@@ -24,19 +24,119 @@
       <ion-input #inpOTP></ion-input>
     </ion-item>
     <ion-button expand="block" (click)="initVerifyOtp()">VERIFY OTP</ion-button>
+
+    
+      <ion-label>Please only choose 18 to 44 OR 45+.Do not combine two age groups. And do not combine two different type vaccines.</ion-label>
+    
+   
     <ion-grid>
       <ion-card *ngFor="let ben of beneficiary">
         <ion-row >
-          <ion-col size="2">
+          <ion-col size="1">
             <ion-checkbox color="primary" [(ngModel)]="ben.selected"></ion-checkbox>
           </ion-col>
           <ion-col size="10">
-            {{ben.name}}
+            {{ben.name}} ({{ben.age}}) - {{ben.vaccine}}
           </ion-col>
         </ion-row>
       </ion-card>
       
     </ion-grid>
-    <ion-button expand="block" (click)="setBeneficiary()">CONTINUE</ion-button>
+    <ion-button expand="block" (click)="setSelectedBeneficiary()">CONTINUE</ion-button>
+
+    <ion-grid>
+      <ion-radio-group value="ANY">
+          <ion-list-header>
+            <ion-label>Select Vaccine</ion-label>
+          </ion-list-header>
+          <ion-row>
+            <ion-col size="6">
+              <ion-item (click)="getVaccinetype($event)" lines="none">
+                <ion-label>ANY</ion-label>
+                <ion-radio slot="start" value="ANY"></ion-radio>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6">
+              <ion-item (click)="getVaccinetype($event)" lines="none">
+                <ion-label>COVISHIELD</ion-label>
+                <ion-radio slot="start" value="COVISHIELD"></ion-radio>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+          <ion-row>
+            <ion-col size="6">
+              <ion-item (click)="getVaccinetype($event)" lines="none">
+                <ion-label>COVAXIN</ion-label>
+                <ion-radio slot="start" value="COVAXIN"></ion-radio>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6">
+              <ion-item (click)="getVaccinetype($event)" lines="none">
+                <ion-label>SPUTNIK V</ion-label>
+                <ion-radio slot="start" value="SPUTNIK V"></ion-radio>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+      </ion-radio-group>
+    </ion-grid>
+
+    <ion-list>
+      <ion-radio-group value="ANY">
+        <ion-list-header>
+          <ion-label>Select Vaccine Fee Type</ion-label>
+        </ion-list-header>
+        <ion-item (click)="getVaccinetype($event)">
+          <ion-label>ANY</ion-label>
+          <ion-radio slot="start" value="ANY"></ion-radio>
+        </ion-item>
+        <ion-item (click)="getVaccinetype($event)">
+          <ion-label>FREE</ion-label>
+          <ion-radio slot="start" value="FREE"></ion-radio>
+        </ion-item>
+        <ion-item (click)="getVaccinetype($event)">
+          <ion-label>PAID</ion-label>
+          <ion-radio slot="start" value="PAID"></ion-radio>
+        </ion-item>
+      </ion-radio-group>
+    </ion-list>
+
+    <ion-list>
+      <ion-radio-group value="pincode">
+        <ion-list-header>
+          <ion-label>Select Area</ion-label>
+        </ion-list-header>
+    
+        <ion-item  (click)="getSelectAreaBy($event)">
+          <ion-label>By District</ion-label>
+          <ion-radio slot="start" value="district"></ion-radio>
+        </ion-item>
+    
+        <ion-item  (click)="getSelectAreaBy($event)"> 
+          <ion-label>By Pincode</ion-label>
+          <ion-radio slot="start" value="pincode"></ion-radio>
+        </ion-item>
+      </ion-radio-group>
+    </ion-list>
+   
+    <ion-item *ngIf="isByPincode">
+      <ion-input type="text" placeholder="Enter Comma Sepeareted Pincode" (ionBlur)="getPincode($event)"></ion-input>
+    </ion-item>
+
+    <ion-item *ngIf="isByDistrict">
+      <ion-label>Select State</ion-label>
+      <ion-select placeholder="Select State" (ionChange)="getState($event)">
+        <ion-select-option *ngFor="let state of stateArray" value="{{state.state_id}}">{{state.state_name}}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item *ngIf="isByDistrict">
+      <ion-label>Select District</ion-label>
+      <ion-select placeholder="Select District" (ionChange)="getDistrict($event)" multiple="true">
+        <ion-select-option *ngFor="let district of districtArray" value="{{district.district_name}}">{{district.district_name}}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+   
   </div>
+  <ion-button expand="block" (click)="saveDetails()">SAVE DETAILS</ion-button>
 </ion-content>

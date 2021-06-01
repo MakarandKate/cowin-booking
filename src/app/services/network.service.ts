@@ -19,11 +19,13 @@ export class NetworkService {
     requestOTP:"https://cdn-api.co-vin.in/api/v2/auth/generateMobileOTP",
     verifyOtp:"https://cdn-api.co-vin.in/api/v2/auth/validateMobileOtp",
     beneficiaries:"https://cdn-api.co-vin.in/api/v2/appointment/beneficiaries",
+    states:"https://cdn-api.co-vin.in/api/v2/admin/location/states",
+    districts:"https://cdn-api.co-vin.in/api/v2/admin/location/districts/",
   }
 
   private TOKEN_ID='';
 
-  private TOKEN=`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiIwZTNjMjdhYy0zODE5LTRhYzktOWNlYi04YzQ4YzEzNzVkMzMiLCJ1c2VyX2lkIjoiMGUzYzI3YWMtMzgxOS00YWM5LTljZWItOGM0OGMxMzc1ZDMzIiwidXNlcl90eXBlIjoiQkVORUZJQ0lBUlkiLCJtb2JpbGVfbnVtYmVyIjo3NTg4NzYzODYyLCJiZW5lZmljaWFyeV9yZWZlcmVuY2VfaWQiOjIxMzM4ODI3MTAzODAwLCJzZWNyZXRfa2V5IjoiYjVjYWIxNjctNzk3Ny00ZGYxLTgwMjctYTYzYWExNDRmMDRlIiwic291cmNlIjoiIiwidWEiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvOTAuMC40NDMwLjIxMiBTYWZhcmkvNTM3LjM2IiwiZGF0ZV9tb2RpZmllZCI6IjIwMjEtMDUtMzFUMDg6MTM6MDIuNDkyWiIsImlhdCI6MTYyMjQ0ODc4MiwiZXhwIjoxNjIyNDQ5NjgyfQ.UWKpfag_G7H0dL_88PNQcO9WMncQdJF9RjlkRUjxaHk`;
+  private TOKEN=``;
 
   private beneficiary=[];
 
@@ -31,8 +33,9 @@ export class NetworkService {
     private storageService:StorageService,
   ) { }
 
-  setTokenId(tokenId:string){
-    this.TOKEN_ID=tokenId;
+  setToken(token:string){
+    this.TOKEN=token;
+    this.storageService.set("token", token);
   }
 
   generateHeader(){
@@ -77,10 +80,11 @@ export class NetworkService {
           reject(err)
         }
       })
-      .catch(error => reject(error));
+      .catch(error => {
+        this.resetToken();
+        reject(error)
+      });
     });
-    
-
   }
   
   verifyOtp(otp:string):Promise<string>{
@@ -105,7 +109,7 @@ export class NetworkService {
         try{
           let obj=JSON.parse(result);
           if(obj.token){
-            this.TOKEN=obj.token;
+            this.setToken(obj.token)
             this.getBeneficiaries();
             resolve("success");
           }else{
@@ -115,7 +119,10 @@ export class NetworkService {
           reject(err)
         }
       })
-      .catch(error => reject(error));
+      .catch(error => {
+        this.resetToken();
+        reject(error)
+      });
     });
     
 
@@ -138,11 +145,93 @@ export class NetworkService {
           this.beneficiary=bObj.beneficiaries;
           resolve(this.beneficiary);
         }catch(err){
+          this.resetToken();
           reject(err)
         }
       })
-      .catch(error => reject(error));
+      .catch(error => {
+        this.resetToken();
+        reject(error);
+      })
     });
+  }
+
+  getStateList():Promise<any>{
+   
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        redirect: 'follow'
+      };
+      fetch(this.URLS.states, requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        try{
+          let respObj= JSON.parse(result);
+          resolve(respObj.states);
+        }catch(error){
+          this.resetToken();
+          reject(error)
+        }
+        
+      })
+      .catch(error => {
+        this.resetToken();
+        reject(error)
+      });
+    });
+  }
+
+
+  getStatewiseDistrict(stateId): Promise<any>{
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        redirect: 'follow'
+      };
+      fetch(this.URLS.districts+stateId, requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        try{
+          let respObj= JSON.parse(result);
+          resolve(respObj.districts);
+        }catch(error){
+          this.resetToken();
+          reject(error)
+        }
+        
+      })
+      .catch(error => {
+        this.resetToken();
+        reject(error)
+      });
+    });
+  }
+
+  getVaccineType(): Promise<any>{
+    return new Promise((resolve,reject)=>{
+      setTimeout(() => {
+        resolve(['covisheild','covaxin','sputvik', "any"]);
+      }, 500);
+    });
+  }
+
+  getVaccineFeeType(): Promise<any>{
+    return new Promise((resolve,reject)=>{
+      setTimeout(() => {
+        resolve(['paid','free', "any"]);
+      }, 500);
+    });
+  }
+
+  resetToken(){
+    alert("Token expired.")
+    window.location.reload();
+    this.storageService.set("token","");
   }
 
 }
