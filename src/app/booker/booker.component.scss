@@ -2,8 +2,16 @@
     display: none;
 }
 
-img{
+img.loader{
     display: block;
     height: 50px;
     margin: auto;
+}
+img.loader.hidden{
+    display: none;
+}
+
+.captcha-holder{
+    background: #fff;
+
 }

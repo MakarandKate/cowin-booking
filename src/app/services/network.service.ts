@@ -23,7 +23,9 @@ export class NetworkService {
     states:"https://cdn-api.co-vin.in/api/v2/admin/location/states",
     districts:"https://cdn-api.co-vin.in/api/v2/admin/location/districts/",
     calenderDistrict : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict",
-    calenderPincode : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByPin"
+    calenderPincode : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByPin",
+    captcha:"https://cdn-api.co-vin.in/api/v2/auth/getRecaptcha",
+    book:"https://cdn-api.co-vin.in/api/v2/appointment/schedule",
   }
 
   
@@ -86,7 +88,7 @@ export class NetworkService {
       });
     });
   }
-  
+
   verifyOtp(otp:string,tokenId:string):Promise<{token:string}>{
     let shaObj = new jsSHA("SHA-256", "TEXT");
     shaObj.update(otp);
@@ -125,6 +127,61 @@ export class NetworkService {
     
 
   }
+  
+  requestCaptch(token:string):Promise<string>{
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'POST',
+        headers: this.getAuthHeaders(token),
+        redirect: 'follow'
+      };
+      fetch(this.URLS.captcha, requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        try{
+          let resultObj=JSON.parse(result);
+          if(resultObj.captcha){
+            resolve(resultObj.captcha);
+          }else{
+            reject("");
+          }
+        }catch(err){
+          reject(err);
+        }
+        
+      })
+      .catch(error => {
+        
+        reject(error)
+      });
+    });
+  }
+
+  book(token:string,details):Promise<string>{
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'POST',
+        headers: this.getAuthHeaders(token),
+        body: JSON.stringify(details),
+        redirect: 'follow',
+      };
+      fetch(this.URLS.book, requestOptions)
+      .then(async response => {
+        if(response.status==200){
+          resolve(await response.text())
+        }else{
+          reject(await response.text());
+        }
+      })
+      .catch(error => {  
+        reject(error)
+      });
+    });
+  }
+
+  
 
   getBeneficiaries(token:string):Promise<any>{
    

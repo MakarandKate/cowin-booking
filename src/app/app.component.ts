@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { StorageService } from './services/storage.service';
+import { BackgroundMode } from '@ionic-native/background-mode/ngx';
 
 declare var SMSReceive: any;
 
@@ -13,8 +14,10 @@ export class AppComponent {
   constructor(
     private platform:Platform,
     private storageService : StorageService,
+    private backgroundMode : BackgroundMode, 
   ) {
     if(this.platform.is("hybrid")){
+      this.backgroundMode.enable();
       SMSReceive.startWatch(
         () => {
           console.log('watch started');
