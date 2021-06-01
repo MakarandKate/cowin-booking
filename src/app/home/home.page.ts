@@ -1,4 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { IonInput } from '@ionic/angular';
 
 import { NetworkService } from '../services/network.service';
@@ -18,41 +19,49 @@ export class HomePage {
   stateArray=[];
   districtArray=[];
   vaccineFeeTypeArray=[];
-
+   
   beneficiary=[];
+  selectedBenificery = [];
+  pincodeArray = [];
+  selectedDistrictArray=[];
+  selectAreaByValue : string = "1";
+  selectedvaccineFeeType : string = "ANY";
+  selectesVaccineType : string = "ANY";
+  locationArray = [];
+  savedData: string = "";
+  TOKEN:string="";
+  OTP_TOKEN_ID:string="";
 
   constructor(
     private networkService:NetworkService,
     private storageService:StorageService,
+    private router:Router,
   ) {
-    
+
+  }
+
+  async getUserData(){
+    this.savedData=await this.storageService.get("userData");
+    if(this.savedData != null){
+      this.router.navigateByUrl('process');
+    }
   }
 
   async ionViewWillEnter(){
+    this.getUserData();
     let phone=await this.storageService.get("phone");
     this.inpPhoneNumber.value=phone;
-    let token=await this.storageService.get("token");
-    if(token && token.length>0){
-      this.networkService.setToken(token);
-      let beneficiary=await this.networkService.getBeneficiaries();
-      this.showBeneficiary(beneficiary);
-    }else{
-
+    this.TOKEN=await this.storageService.get("token");
+    if(this.TOKEN && this.TOKEN.length>0){ 
+      this.getBeneficiary();
     }
     
-  }
-
-  async ngOnInit(){
-    
-
-    this.getVaccineArray();
-    this.getVaccineFeeTypeArray();
   }
 
   async initSendOtp(){
     let phone=this.inpPhoneNumber.value.toString();
     try{
-      await this.networkService.requestOtp(phone);
+      this.OTP_TOKEN_ID=await this.networkService.requestOtp(phone);
     }catch(err){
 
     }
@@ -61,13 +70,22 @@ export class HomePage {
   async initVerifyOtp(){
     let otp:string=this.inpOTP.value.toString();
     
-    //console.log(hash)
-    let response=await this.networkService.verifyOtp(otp);
-    if(response == "success"){
-      let beneficiary=await this.networkService.getBeneficiaries();
-      this.showBeneficiary(beneficiary);
+    let response=await this.networkService.verifyOtp(otp,this.OTP_TOKEN_ID);
+    if(response && response.token){
+      this.TOKEN=response.token;
+      this.storageService.set("token",this.TOKEN);
+      this.getBeneficiary();
     }
     
+  }
+
+  async getBeneficiary(){
+    try{
+      let beneficiary=await this.networkService.getBeneficiaries(this.TOKEN);
+      this.showBeneficiary(beneficiary);
+    }catch(err){
+      this.resetToken();
+    }
   }
 
   showBeneficiary(beneficiary){
@@ -80,7 +98,7 @@ export class HomePage {
   }
 
   setSelectedBeneficiary(){
-    let selectedBenificery = [];
+    let selectedBenificery=[];
     this.beneficiary.forEach(ben => {
       if(ben.selected){
         selectedBenificery.push({
@@ -90,16 +108,14 @@ export class HomePage {
           'age': ben['age'],
           'status': ben['vaccination_status']
         })
-        console.log(ben);
       }
-  });
-    console.log(selectedBenificery);
+    });
+    this.selectedBenificery=selectedBenificery;
   }
 
   getSelectAreaBy(event){
-    console.log(event.target.value);
-    let value=event.target.value;
-    if(value == "district"){
+    this.selectAreaByValue=event.target.value;
+    if(this.selectAreaByValue == "2"){
       this.isByDistrict = true;
       this.isByPincode= false;
       this.getStateList();
@@ -116,46 +132,76 @@ export class HomePage {
   }
 
   getDistrict(event){
-    console.log(event.target.value);
+    this.selectedDistrictArray=JSON.parse("["+event.target.value.toString()+"]");
+    this.locationArray=this.selectedDistrictArray;
   }
 
   getVaccinetype(event){
-    console.log(event.target.value);
+    this.selectesVaccineType = event.target.value;
   }
 
-  getAgeCategory(event){
-    console.log(event.target.value);
+  getVaccineFeetype(event){
+    this.selectedvaccineFeeType=event.target.value;
   }
 
-  async getVaccineArray(){
-    this.vaccineArray=await this.networkService.getVaccineType();
-  }
 
   async getStateList(){
-    this.stateArray= await this.networkService.getStateList();
+    try{
+      this.stateArray= await this.networkService.getStateList(this.TOKEN);
+    }catch(err){
+      this.resetToken();
+    }
   }
 
   async getDistrictList(stateId){
-    this.districtArray = await this.networkService.getStatewiseDistrict(stateId);
+    try{
+      this.districtArray = await this.networkService.getStatewiseDistrict(this.TOKEN,stateId);
+    }catch(err){
+      this.resetToken();
+    }
   }
 
-  async getVaccineFeeTypeArray(){
-    this.vaccineFeeTypeArray=await this.networkService.getVaccineFeeType();
-  }
 
   getPincode(event){
     let pincode=event.target.value.split(",");
     console.log(pincode);
-    let pincodeArray = [];
     pincode.forEach((pin,i) => {
-       pincodeArray.push({
+       this.pincodeArray.push({
         'pincode' : pin,
         'alert_freq': 440 + ((2 * i) * 110)
        })
     });
-    console.log(pincodeArray);
+    console.log(this.pincodeArray);
+    this.locationArray=this.pincodeArray;
+  }
+
+  async saveDetails(){
+    if(this.selectedBenificery.length > 0 && this.locationArray.length > 0){
+      let userDataObj = {
+        'beneficiary_dtls': this.selectedBenificery,
+        'location_dtls': this.locationArray,
+        'search_option': this.selectAreaByValue,
+        'minimum_slots': this.selectedBenificery.length,
+        'refresh_freq': 10,
+        'auto_book': "yes-please",
+        'start_date': new Date(),
+        'vaccine_type': this.selectesVaccineType,
+        'fee_type': this.selectedvaccineFeeType
+      }
+      await this.storageService.set("userData",userDataObj);
+    
+      this.router.navigateByUrl("process");
+    }else{
+      alert("please select beneficiary and location");
+    }
+    
+    
   }
 
  
+  async resetToken(){
+    await this.storageService.set("token","");
+    window.location.reload();
+  }
 
 }

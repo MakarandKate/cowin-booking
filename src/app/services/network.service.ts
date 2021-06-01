@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import jsSHA from 'jssha'
+import { Util } from '../utils';
 import { StorageService } from './storage.service';
 
 @Injectable({
@@ -21,11 +22,13 @@ export class NetworkService {
     beneficiaries:"https://cdn-api.co-vin.in/api/v2/appointment/beneficiaries",
     states:"https://cdn-api.co-vin.in/api/v2/admin/location/states",
     districts:"https://cdn-api.co-vin.in/api/v2/admin/location/districts/",
+    calenderDistrict : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict",
+    calenderPincode : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByPin"
   }
 
-  private TOKEN_ID='';
+  
 
-  private TOKEN=``;
+  
 
   private beneficiary=[];
 
@@ -33,10 +36,7 @@ export class NetworkService {
     private storageService:StorageService,
   ) { }
 
-  setToken(token:string){
-    this.TOKEN=token;
-    this.storageService.set("token", token);
-  }
+  
 
   generateHeader(){
     let apiHeaders = new Headers();
@@ -46,9 +46,9 @@ export class NetworkService {
     return apiHeaders;
   }
 
-  getAuthHeaders(){
+  getAuthHeaders(token : string){
     let apiHeaders=this.generateHeader();
-    apiHeaders.append("Authorization",`Bearer ${this.TOKEN}`);
+    apiHeaders.append("Authorization",`Bearer ${token}`);
     return apiHeaders;
   }
 
@@ -71,8 +71,8 @@ export class NetworkService {
         try{
           let obj=JSON.parse(result);
           if(obj.txnId){
-            this.TOKEN_ID=obj.txnId;
-            resolve("success");
+            
+            resolve(obj.txnId);
           }else{
             reject("No txnId")
           }
@@ -81,13 +81,13 @@ export class NetworkService {
         }
       })
       .catch(error => {
-        this.resetToken();
+        
         reject(error)
       });
     });
   }
   
-  verifyOtp(otp:string):Promise<string>{
+  verifyOtp(otp:string,tokenId:string):Promise<{token:string}>{
     let shaObj = new jsSHA("SHA-256", "TEXT");
     shaObj.update(otp);
     let otpHash = shaObj.getHash("HEX");
@@ -98,7 +98,7 @@ export class NetworkService {
         method: 'POST',
         headers: this.generateHeader(),
         body: JSON.stringify({
-          "txnId":this.TOKEN_ID,
+          "txnId":tokenId,
           "otp":otpHash
         }),
         redirect: 'follow'
@@ -109,9 +109,7 @@ export class NetworkService {
         try{
           let obj=JSON.parse(result);
           if(obj.token){
-            this.setToken(obj.token)
-            this.getBeneficiaries();
-            resolve("success");
+            resolve({token:obj.token});
           }else{
             reject("No Token")
           }
@@ -120,7 +118,7 @@ export class NetworkService {
         }
       })
       .catch(error => {
-        this.resetToken();
+        
         reject(error)
       });
     });
@@ -128,13 +126,13 @@ export class NetworkService {
 
   }
 
-  getBeneficiaries():Promise<any>{
+  getBeneficiaries(token:string):Promise<any>{
    
     return new Promise((resolve,reject)=>{
       
       let requestOptions:any = {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(token),
         redirect: 'follow'
       };
       fetch(this.URLS.beneficiaries, requestOptions)
@@ -145,24 +143,24 @@ export class NetworkService {
           this.beneficiary=bObj.beneficiaries;
           resolve(this.beneficiary);
         }catch(err){
-          this.resetToken();
+          
           reject(err)
         }
       })
       .catch(error => {
-        this.resetToken();
+        
         reject(error);
       })
     });
   }
 
-  getStateList():Promise<any>{
+  getStateList(token:string):Promise<any>{
    
     return new Promise((resolve,reject)=>{
       
       let requestOptions:any = {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(token),
         redirect: 'follow'
       };
       fetch(this.URLS.states, requestOptions)
@@ -172,25 +170,25 @@ export class NetworkService {
           let respObj= JSON.parse(result);
           resolve(respObj.states);
         }catch(error){
-          this.resetToken();
+          
           reject(error)
         }
         
       })
       .catch(error => {
-        this.resetToken();
+        
         reject(error)
       });
     });
   }
 
 
-  getStatewiseDistrict(stateId): Promise<any>{
+  getStatewiseDistrict(token:string,stateId:number): Promise<any>{
     return new Promise((resolve,reject)=>{
       
       let requestOptions:any = {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(token),
         redirect: 'follow'
       };
       fetch(this.URLS.districts+stateId, requestOptions)
@@ -200,13 +198,13 @@ export class NetworkService {
           let respObj= JSON.parse(result);
           resolve(respObj.districts);
         }catch(error){
-          this.resetToken();
+          
           reject(error)
         }
         
       })
       .catch(error => {
-        this.resetToken();
+        
         reject(error)
       });
     });
@@ -214,24 +212,50 @@ export class NetworkService {
 
   getVaccineType(): Promise<any>{
     return new Promise((resolve,reject)=>{
-      setTimeout(() => {
         resolve(['covisheild','covaxin','sputvik', "any"]);
-      }, 500);
     });
   }
 
   getVaccineFeeType(): Promise<any>{
     return new Promise((resolve,reject)=>{
-      setTimeout(() => {
         resolve(['paid','free', "any"]);
-      }, 500);
     });
   }
 
-  resetToken(){
-    alert("Token expired.")
-    window.location.reload();
-    this.storageService.set("token","");
+  
+
+  saveData(collectionArray){
+    this.storageService.set("collection",collectionArray);
   }
+
+  getDistrictCalender(token:string, districtId, vaccineType){
+    // district_id={0}&date={1}
+
+    return new Promise((resolve,reject)=>{
+      let date=Util.getDate();
+      let requestOptions:any = {
+        method: 'GET',
+        headers: this.getAuthHeaders(token),
+        redirect: 'follow'
+      };
+      fetch(this.URLS.calenderDistrict+`?district_id=${districtId}&date=${date}&vaccine=${vaccineType}`, requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        console.log(result);
+        try{
+          let bObj=JSON.parse(result);
+          resolve(bObj);
+        }catch(err){
+          
+          reject(err)
+        }
+      })
+      .catch(error => {
+        
+        reject(error);
+      })
+    });
+  }
+
 
 }
