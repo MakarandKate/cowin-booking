@@ -25,6 +25,7 @@ export class AppComponent {
             console.log('onSMSArrive()');
             var IncomingSMS = e.data;
             console.log(JSON.stringify(IncomingSMS));
+            this.storageService.newSms.next(JSON.stringify(IncomingSMS));
           });
         },
         () => { console.log('watch start failed') }

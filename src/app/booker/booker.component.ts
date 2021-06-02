@@ -36,6 +36,11 @@ export class BookerComponent implements OnInit {
       this.TOKEN=token;
       this.start();
     }
+    this.storageService.newSms.subscribe((smsText)=>{
+      if(this.TOKEN=="" && this.otpRequested==true){
+        this.inpOTP.value=smsText;
+      }
+    });
   }
 
   async start(){
