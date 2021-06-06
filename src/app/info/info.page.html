@@ -38,5 +38,5 @@
     </div>
 </ion-content>
 <ion-footer>
-  <ion-button expand="block" (click)="goToHome()">I Accept</ion-button>
+  <ion-button expand="block" (click)="goToHome()" [disabled]="!isAppActive" >I Accept</ion-button>
 </ion-footer>
