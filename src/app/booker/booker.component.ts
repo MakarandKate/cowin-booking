@@ -64,6 +64,7 @@ export class BookerComponent implements OnInit {
         resultsArray=await this.networkService.getDistrictCalender(this.mTOKEN,this.userData);
       }
       let availableCenter=this.checkAvailable(resultsArray);
+      console.debug("availableCenter",availableCenter);
       if(availableCenter.name){
         this.initBook(availableCenter);
       }else{
@@ -144,11 +145,17 @@ export class BookerComponent implements OnInit {
 
   checkAvailable(resultsArray){
     let dose="1";
+    let ageGroup=999;
     this.userData.beneficiary_dtls.forEach(beneficiary_dtl => {
+      console.debug("beneficiary_dtl",beneficiary_dtl)
+      if(ageGroup>beneficiary_dtl.age){
+        ageGroup=beneficiary_dtl.age;
+      }
       if(beneficiary_dtl.status=="Partially Vaccinated"){
         dose="2";
       }
     });
+    
     let availableCenter:any={count:0};
     for(let r=0;r<resultsArray.length;r++){
       let centers=resultsArray[r];
@@ -160,6 +167,7 @@ export class BookerComponent implements OnInit {
           for(let s=0;s<sessions.length;s++){
             let session=sessions[s];
             if(
+              session[`min_age_limit`]<=ageGroup && 
               session[`available_capacity_dose${dose}`]>this.userData.beneficiary_dtls.length 
               && session[`available_capacity_dose${dose}`]>availableCenter.count
             ){
