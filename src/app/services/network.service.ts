@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import jsSHA from 'jssha'
+import { Util } from '../utils';
 import { StorageService } from './storage.service';
 
 @Injectable({
@@ -19,11 +20,17 @@ export class NetworkService {
     requestOTP:"https://cdn-api.co-vin.in/api/v2/auth/generateMobileOTP",
     verifyOtp:"https://cdn-api.co-vin.in/api/v2/auth/validateMobileOtp",
     beneficiaries:"https://cdn-api.co-vin.in/api/v2/appointment/beneficiaries",
+    states:"https://cdn-api.co-vin.in/api/v2/admin/location/states",
+    districts:"https://cdn-api.co-vin.in/api/v2/admin/location/districts/",
+    calenderDistrict : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict",
+    calenderPincode : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByPin",
+    captcha:"https://cdn-api.co-vin.in/api/v2/auth/getRecaptcha",
+    book:"https://cdn-api.co-vin.in/api/v2/appointment/schedule",
   }
 
-  private TOKEN_ID='';
+  
 
-  private TOKEN=`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiIwZTNjMjdhYy0zODE5LTRhYzktOWNlYi04YzQ4YzEzNzVkMzMiLCJ1c2VyX2lkIjoiMGUzYzI3YWMtMzgxOS00YWM5LTljZWItOGM0OGMxMzc1ZDMzIiwidXNlcl90eXBlIjoiQkVORUZJQ0lBUlkiLCJtb2JpbGVfbnVtYmVyIjo3NTg4NzYzODYyLCJiZW5lZmljaWFyeV9yZWZlcmVuY2VfaWQiOjIxMzM4ODI3MTAzODAwLCJzZWNyZXRfa2V5IjoiYjVjYWIxNjctNzk3Ny00ZGYxLTgwMjctYTYzYWExNDRmMDRlIiwic291cmNlIjoiIiwidWEiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvOTAuMC40NDMwLjIxMiBTYWZhcmkvNTM3LjM2IiwiZGF0ZV9tb2RpZmllZCI6IjIwMjEtMDUtMzFUMDg6MTM6MDIuNDkyWiIsImlhdCI6MTYyMjQ0ODc4MiwiZXhwIjoxNjIyNDQ5NjgyfQ.UWKpfag_G7H0dL_88PNQcO9WMncQdJF9RjlkRUjxaHk`;
+  
 
   private beneficiary=[];
 
@@ -31,9 +38,7 @@ export class NetworkService {
     private storageService:StorageService,
   ) { }
 
-  setTokenId(tokenId:string){
-    this.TOKEN_ID=tokenId;
-  }
+  
 
   generateHeader(){
     let apiHeaders = new Headers();
@@ -43,9 +48,9 @@ export class NetworkService {
     return apiHeaders;
   }
 
-  getAuthHeaders(){
+  getAuthHeaders(token : string){
     let apiHeaders=this.generateHeader();
-    apiHeaders.append("Authorization",`Bearer ${this.TOKEN}`);
+    apiHeaders.append("Authorization",`Bearer ${token}`);
     return apiHeaders;
   }
 
@@ -68,8 +73,8 @@ export class NetworkService {
         try{
           let obj=JSON.parse(result);
           if(obj.txnId){
-            this.TOKEN_ID=obj.txnId;
-            resolve("success");
+            
+            resolve(obj.txnId);
           }else{
             reject("No txnId")
           }
@@ -77,13 +82,14 @@ export class NetworkService {
           reject(err)
         }
       })
-      .catch(error => reject(error));
+      .catch(error => {
+        
+        reject(error)
+      });
     });
-    
-
   }
-  
-  verifyOtp(otp:string):Promise<string>{
+
+  verifyOtp(otp:string,tokenId:string):Promise<{token:string}>{
     let shaObj = new jsSHA("SHA-256", "TEXT");
     shaObj.update(otp);
     let otpHash = shaObj.getHash("HEX");
@@ -94,7 +100,7 @@ export class NetworkService {
         method: 'POST',
         headers: this.generateHeader(),
         body: JSON.stringify({
-          "txnId":this.TOKEN_ID,
+          "txnId":tokenId,
           "otp":otpHash
         }),
         redirect: 'follow'
@@ -105,9 +111,7 @@ export class NetworkService {
         try{
           let obj=JSON.parse(result);
           if(obj.token){
-            this.TOKEN=obj.token;
-            this.getBeneficiaries();
-            resolve("success");
+            resolve({token:obj.token});
           }else{
             reject("No Token")
           }
@@ -115,19 +119,88 @@ export class NetworkService {
           reject(err)
         }
       })
-      .catch(error => reject(error));
+      .catch(error => {
+        
+        reject(error)
+      });
     });
     
 
   }
+  
+  requestCaptch(token:string):Promise<string>{
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'POST',
+        headers: this.getAuthHeaders(token),
+        redirect: 'follow'
+      };
+      fetch(this.URLS.captcha, requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        try{
+          let resultObj=JSON.parse(result);
+          if(resultObj.captcha){
+            resolve(resultObj.captcha);
+          }else{
+            reject("");
+          }
+        }catch(err){
+          reject(err);
+        }
+        
+      })
+      .catch(error => {
+        
+        reject(error)
+      });
+    });
+  }
 
-  getBeneficiaries():Promise<any>{
+  book(token:string,details):Promise<string>{
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'POST',
+        headers: this.getAuthHeaders(token),
+        body: JSON.stringify(details),
+        redirect: 'follow',
+      };
+      fetch(this.URLS.book, requestOptions)
+      .then(async response => {
+        if(response.status==200){
+          try{
+            let resObj=JSON.parse(await response.text());
+            if(resObj.appointment_confirmation_no){
+              resolve(resObj.appointment_confirmation_no)
+            }else{
+              reject("")
+            }
+          }catch(err){
+            reject("")
+          }
+          
+          
+        }else{
+          reject(await response.text());
+        }
+      })
+      .catch(error => {  
+        reject(error)
+      });
+    });
+  }
+
+  
+
+  getBeneficiaries(token:string):Promise<any>{
    
     return new Promise((resolve,reject)=>{
       
       let requestOptions:any = {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(token),
         redirect: 'follow'
       };
       fetch(this.URLS.beneficiaries, requestOptions)
@@ -138,11 +211,153 @@ export class NetworkService {
           this.beneficiary=bObj.beneficiaries;
           resolve(this.beneficiary);
         }catch(err){
+          
           reject(err)
         }
       })
-      .catch(error => reject(error));
+      .catch(error => {
+        
+        reject(error);
+      })
     });
   }
+
+  getStateList(token:string):Promise<any>{
+   
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'GET',
+        headers: this.getAuthHeaders(token),
+        redirect: 'follow'
+      };
+      fetch(this.URLS.states, requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        try{
+          let respObj= JSON.parse(result);
+          resolve(respObj.states);
+        }catch(error){
+          
+          reject(error)
+        }
+        
+      })
+      .catch(error => {
+        
+        reject(error)
+      });
+    });
+  }
+
+
+  getStatewiseDistrict(token:string,stateId:number): Promise<any>{
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'GET',
+        headers: this.getAuthHeaders(token),
+        redirect: 'follow'
+      };
+      fetch(this.URLS.districts+stateId, requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        try{
+          let respObj= JSON.parse(result);
+          resolve(respObj.districts);
+        }catch(error){
+          
+          reject(error)
+        }
+        
+      })
+      .catch(error => {
+        
+        reject(error)
+      });
+    });
+  }
+
+  getDistrictCalender(token:string, userData){
+    // district_id={0}&date={1}
+
+    return new Promise(async (resolve,reject)=>{
+      try{
+        let date=Util.getDate();
+        let vaccineType='';
+        if(userData.vaccine_type!="ANY"){
+          vaccineType='&vaccine='+userData.vaccine_type;
+        }
+        let requestOptions:any = {
+          method: 'GET',
+          headers: this.getAuthHeaders(token),
+          redirect: 'follow'
+        };
+        let resultArray=[];
+        for(let i=0;i<userData.location_dtls.length;i++){
+          let apiResponse=await fetch(this.URLS.calenderDistrict+`?district_id=${userData.location_dtls[i].district_id}&date=${date}${vaccineType}`, requestOptions)
+          
+          if(apiResponse.status==200){
+            let responseObj=await apiResponse.json();
+            if(responseObj.centers){
+              resultArray.push(responseObj.centers);
+            }else{
+              reject("");
+            }
+          }else{
+            reject("");
+          }
+          
+          
+          
+        }
+        resolve(resultArray);
+      }catch(err){
+        reject(err);
+      }
+      
+      
+    });
+  }
+
+  getPinCalender(token:string, userData){
+    
+    console.log("getPinCalender",userData)
+    return new Promise(async (resolve,reject)=>{
+      try{
+        let date=Util.getDate();
+        let vaccineType='';
+        if(userData.vaccine_type!="ANY"){
+          vaccineType='&vaccine='+userData.vaccine_type;
+        }
+        let requestOptions:any = {
+          method: 'GET',
+          headers: this.getAuthHeaders(token),
+          redirect: 'follow'
+        };
+        let resultArray=[];
+        for(let i=0;i<userData.location_dtls.length;i++){
+          let apiResponse=await fetch(this.URLS.calenderPincode+`?pincode=${userData.location_dtls[i].pincode}&date=${date}${vaccineType}`, requestOptions)
+          
+          if(apiResponse.status==200){
+            let responseObj=await apiResponse.json();
+            if(responseObj.centers){
+              resultArray.push(responseObj.centers);
+            }else{
+              reject("");
+            }
+          }else{
+            reject("");
+          }
+        }
+        resolve(resultArray);
+      }catch(err){
+        reject(err);
+      }
+      
+      
+    });
+  }
+
 
 }

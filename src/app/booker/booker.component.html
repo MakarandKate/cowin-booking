@@ -1,0 +1,23 @@
+<h2>Process {{processId}}</h2>
+<div [ngClass]="{hidden:TOKEN.length}">
+
+  <ion-button [ngClass]="{hidden:otpRequested}" expand="block" (click)="initSendOtp()">START</ion-button>
+  <ion-item [ngClass]="{hidden:!otpRequested}">
+    <ion-label position="floating">OTP</ion-label>
+    <ion-input #inpOTP></ion-input>
+  </ion-item>
+  <ion-button [ngClass]="{hidden:!otpRequested}" expand="block" (click)="initVerifyOtp()">VERIFY OTP</ion-button>
+</div>
+<div [ngClass]="{hidden:!TOKEN.length}">
+  <img class="loader" [ngClass]="{hidden:captcha.length}" src="/assets/loader.svg" />
+  <p>Process is running since {{timerCounter}} s.</p>
+  <div class="captcha-holder" [ngClass]="{hidden:!captcha.length}">
+    <img [src]="getSantizeUrl(captchaUrl)"/>
+    <ion-item >
+      <ion-label position="floating">Captcha</ion-label>
+      <ion-input #inpCaptcha></ion-input>
+    </ion-item>
+    <ion-button color="success" expand="block" shape="round" (click)="book()">BOOK</ion-button>
+  </div>
+  
+</div>

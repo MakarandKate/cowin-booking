@@ -1,0 +1,20 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-button (click)="resetData()">Reset Data</ion-button>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  
+  <ion-card>
+    <app-booker [processId]="1"></app-booker>
+  </ion-card>
+  <ion-card>
+    <app-booker [processId]="2"></app-booker>
+  </ion-card>
+  <ion-card>
+    <app-booker [processId]="3"></app-booker>
+  </ion-card>
+  <p>Start process with interval of 5 minutes for better chances.</p>
+  <p>Each process will end in 10-15 min restart the process by OTP</p>
+</ion-content>
