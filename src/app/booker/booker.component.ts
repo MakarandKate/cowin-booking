@@ -1,5 +1,5 @@
 import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { IonInput } from '@ionic/angular';
@@ -23,12 +23,13 @@ export class BookerComponent implements OnInit {
   
   @ViewChild("inpOTP",{static:false})inpOTP:IonInput;
   @ViewChild("inpCaptcha",{static:false})inpCaptcha:IonInput;
-  @Input("processId") processId:string;
+  @Input("processId") processId:number;
   constructor(
     private networkService : NetworkService,
     private storageService : StorageService,
     private sanitizer: DomSanitizer,
     private router : Router,
+    private cd:ChangeDetectorRef,
   ) { }
 
   async ngOnInit() {
@@ -43,7 +44,9 @@ export class BookerComponent implements OnInit {
       if(this.mTOKEN=="" && this.otpRequested==true){
         this.storageService.count("COUNTER_OTP_AUTO_READ")
         this.inpOTP.value=smsText;
-        this.initVerifyOtp();
+        setTimeout(()=>{
+          this.initVerifyOtp();
+        },100);
       }
     });
   }
@@ -91,6 +94,7 @@ export class BookerComponent implements OnInit {
       this.captcha=captcha;
       this.captchaUrl=url;
       this.availableCenter=availableCenter;
+      this.cd.detectChanges();
       var audio=new Audio("/assets/beep.mp3");
       audio.play();
     }catch(err){
@@ -200,7 +204,7 @@ export class BookerComponent implements OnInit {
     let response=await this.networkService.verifyOtp(otp,this.txnId);
     if(response && response.token){
       this.mTOKEN=response.token;
-      this.storageService.set("token"+this.processId,this.mTOKEN);
+      await this.storageService.set("token"+this.processId,this.mTOKEN);
       
       this.start();
     }
