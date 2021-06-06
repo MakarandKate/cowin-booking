@@ -1,12 +1,26 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>success</ion-title>
+    <ion-title>Success</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content style="text-align: center;" >
-  <ion-title size="large">
+  <ion-title>
     <p class="title">Congratulations!</p>
     <p>Your Appointment Has Been Scheduled.</p>
   </ion-title>
+  <ion-list>
+    <ion-title>Appointment Information</ion-title>
+    <ion-item>Center : {{center}}</ion-item>
+    <ion-item>Slot : {{slot}}</ion-item>
+  </ion-list>
+  <ion-title>
+    <p>Please Check <a href="https://www.cowin.gov.in/">CoWIN</a> 
+      <br/>website for details.</p>
+  </ion-title>
+
 </ion-content>
+
+<ion-footer>
+  <ion-button expand="block" (click)="goToHome()" [disabled]="!isBtnActive" >Okay</ion-button>
+</ion-footer>

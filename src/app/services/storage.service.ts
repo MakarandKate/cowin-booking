@@ -33,4 +33,16 @@ export class StorageService {
     return this._storage?.get(key);
   }
 
+  public async count(key:string){
+    let count=await this.get(key);
+    if(!count){
+      count=0;
+    }
+    count++;
+    this.set(key,count);
+  }
+  public flush(){
+    this.storage.clear();
+  }
+
 }

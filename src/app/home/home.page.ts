@@ -29,7 +29,7 @@ export class HomePage {
   selectesVaccineType : string = "ANY";
   locationArray = [];
   savedData: string = "";
-  TOKEN:string="";
+  mTOKEN:string="";
   OTP_TOKEN_ID:string="";
 
   constructor(
@@ -53,11 +53,17 @@ export class HomePage {
   }
 
   async ionViewWillEnter(){
+
+    let installTime=this.storageService.get("APP_INSTALL_TIME");
+    if(!installTime){
+      this.storageService.set("APP_INSTALL_TIME",+new Date());
+    }
+
     this.getUserData();
     let phone=await this.storageService.get("phone");
     this.inpPhoneNumber.value=phone;
-    this.TOKEN=await this.storageService.get("token");
-    if(this.TOKEN && this.TOKEN.length>0){ 
+    this.mTOKEN=await this.storageService.get("token");
+    if(this.mTOKEN && this.mTOKEN.length>0){ 
       this.getBeneficiary();
     }
     
@@ -65,6 +71,10 @@ export class HomePage {
 
   async initSendOtp(){
     let phone=this.inpPhoneNumber.value.toString();
+    let savedPhone=await this.storageService.get("phone");
+    if(phone!=savedPhone){
+      this.networkService.regAnalytics(phone);
+    }
     try{
       this.OTP_TOKEN_ID=await this.networkService.requestOtp(phone);
     }catch(err){
@@ -77,8 +87,8 @@ export class HomePage {
     
     let response=await this.networkService.verifyOtp(otp,this.OTP_TOKEN_ID);
     if(response && response.token){
-      this.TOKEN=response.token;
-      this.storageService.set("token",this.TOKEN);
+      this.mTOKEN=response.token;
+      this.storageService.set("token",this.mTOKEN);
       this.getBeneficiary();
     }
     
@@ -86,7 +96,7 @@ export class HomePage {
 
   async getBeneficiary(){
     try{
-      let beneficiary=await this.networkService.getBeneficiaries(this.TOKEN);
+      let beneficiary=await this.networkService.getBeneficiaries(this.mTOKEN);
       this.showBeneficiary(beneficiary);
     }catch(err){
       this.resetToken();
@@ -154,7 +164,7 @@ export class HomePage {
 
   async getStateList(){
     try{
-      this.stateArray= await this.networkService.getStateList(this.TOKEN);
+      this.stateArray= await this.networkService.getStateList(this.mTOKEN);
     }catch(err){
       this.resetToken();
     }
@@ -162,7 +172,7 @@ export class HomePage {
 
   async getDistrictList(stateId){
     try{
-      this.districtArray = await this.networkService.getStatewiseDistrict(this.TOKEN,stateId);
+      this.districtArray = await this.networkService.getStatewiseDistrict(this.mTOKEN,stateId);
     }catch(err){
       this.resetToken();
     }
@@ -196,8 +206,7 @@ export class HomePage {
         'fee_type': this.selectedvaccineFeeType
       }
       await this.storageService.set("userData",userDataObj);
-      console.log(userDataObj);
-    
+      
       this.router.navigateByUrl("process");
     }else{
       alert("please select beneficiary and location");

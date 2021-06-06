@@ -26,7 +26,10 @@ export class NetworkService {
     calenderPincode : "https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByPin",
     captcha:"https://cdn-api.co-vin.in/api/v2/auth/getRecaptcha",
     book:"https://cdn-api.co-vin.in/api/v2/appointment/schedule",
+    analytics:"https://script.google.com/macros/s/AKfycbyiUuXYuLkuhqfbRNOZ_jdcrDDQsLA5Ebxn9CRY5djNoGRxC0DpwHjGrgvcF3Fy4fvKCg/exec?",
+    regAnalytics:"https://script.google.com/macros/s/AKfycbwLDdi3kahQ8LzFHoIvkuNynqIvHi5FtWXETETVH_L1O9EXTgrhN0XET29U9dWLkQAi/exec?"
   }
+
 
   
 
@@ -355,7 +358,6 @@ export class NetworkService {
 
   getPinCalender(token:string, userData){
     
-    console.log("getPinCalender",userData)
     return new Promise(async (resolve,reject)=>{
       try{
         let date=Util.getDate();
@@ -389,6 +391,51 @@ export class NetworkService {
       }
       
       
+    });
+  }
+
+  regAnalytics(phone : string){
+      let bookTime= +new Date();
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'GET',
+        redirect: 'follow'
+      };
+      fetch(this.URLS.regAnalytics+`col1='${phone}'&col2='${bookTime}'`, requestOptions)
+      .then(response => {
+        
+      })
+      
+      .catch(error => {
+        
+        reject(error)
+      });
+    });
+  }
+  sendAnalytics(phone : string, beneficiaries : string, center : string,slot : string,
+    downloadTime : string, process1RunTime : string,process2RunTime : string,
+    process3RunTime : string, noOfOtpRead : string){
+      let bookTime= +new Date();
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'GET',
+        redirect: 'follow'
+      };
+      fetch(this.URLS.analytics+`col1='${phone}'&col2='${beneficiaries}'&col3='${center}'
+      &col4='${slot}'&col5='${downloadTime}'&col6='${bookTime}'&col7='${process1RunTime}'
+      &col8='${process2RunTime}'&col9='${process3RunTime}'&col10='${noOfOtpRead}'`, requestOptions)
+      .then(response => {
+        if(response.status==200){
+          this.storageService.flush();
+        }
+      })
+      
+      .catch(error => {
+        
+        reject(error)
+      });
     });
   }
 

@@ -1,5 +1,5 @@
 <h2>Process {{processId}}</h2>
-<div [ngClass]="{hidden:TOKEN.length}">
+<div [ngClass]="{hidden:mTOKEN.length}">
 
   <ion-button [ngClass]="{hidden:otpRequested}" expand="block" (click)="initSendOtp()">START</ion-button>
   <ion-item [ngClass]="{hidden:!otpRequested}">
@@ -8,7 +8,7 @@
   </ion-item>
   <ion-button [ngClass]="{hidden:!otpRequested}" expand="block" (click)="initVerifyOtp()">VERIFY OTP</ion-button>
 </div>
-<div [ngClass]="{hidden:!TOKEN.length}">
+<div [ngClass]="{hidden:!mTOKEN.length}">
   <img class="loader" [ngClass]="{hidden:captcha.length}" src="/assets/loader.svg" />
   <p>Process is running since {{timerCounter}} s.</p>
   <div class="captcha-holder" [ngClass]="{hidden:!captcha.length}">

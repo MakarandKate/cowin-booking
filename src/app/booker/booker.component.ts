@@ -1,6 +1,7 @@
 import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { IonInput } from '@ionic/angular';
 import { NetworkService } from '../services/network.service';
 import { StorageService } from '../services/storage.service';
@@ -12,7 +13,7 @@ import { StorageService } from '../services/storage.service';
 })
 export class BookerComponent implements OnInit {
   userData : any;
-  TOKEN:string="";
+  mTOKEN:string="";
   otpRequested:boolean=false;
   txnId:string='';
   captcha:string='';
@@ -27,6 +28,7 @@ export class BookerComponent implements OnInit {
     private networkService : NetworkService,
     private storageService : StorageService,
     private sanitizer: DomSanitizer,
+    private router : Router,
   ) { }
 
   async ngOnInit() {
@@ -34,11 +36,12 @@ export class BookerComponent implements OnInit {
     
     let token=await this.storageService.get("token"+this.processId);
     if(token){
-      this.TOKEN=token;
+      this.mTOKEN=token;
       this.start();
     }
     this.storageService.newSms.subscribe((smsText)=>{
-      if(this.TOKEN=="" && this.otpRequested==true){
+      if(this.mTOKEN=="" && this.otpRequested==true){
+        this.storageService.count("COUNTER_OTP_AUTO_READ")
         this.inpOTP.value=smsText;
         this.initVerifyOtp();
       }
@@ -53,9 +56,9 @@ export class BookerComponent implements OnInit {
     try{
       let resultsArray;
       if(this.userData.search_option == "1"){
-        resultsArray=await this.networkService.getPinCalender(this.TOKEN,this.userData);
+        resultsArray=await this.networkService.getPinCalender(this.mTOKEN,this.userData);
       }else{
-        resultsArray=await this.networkService.getDistrictCalender(this.TOKEN,this.userData);
+        resultsArray=await this.networkService.getDistrictCalender(this.mTOKEN,this.userData);
       }
       let availableCenter=this.checkAvailable(resultsArray);
       if(availableCenter.name){
@@ -73,6 +76,7 @@ export class BookerComponent implements OnInit {
   }
 
   async initBook(availableCenter){
+    
   //   {
   //     'beneficiaries': [beneficiary['bref_id'] for beneficiary in beneficiary_dtls],
   //     'dose': 2 if [beneficiary['status'] for beneficiary in beneficiary_dtls][0] == 'Partially Vaccinated' else 1,
@@ -81,12 +85,14 @@ export class BookerComponent implements OnInit {
   //     'slot'      : options[choice[0] - 1]['slots'][choice[1] - 1]
   // }
     try{
-      let captcha=await this.networkService.requestCaptch(this.TOKEN);
+      let captcha=await this.networkService.requestCaptch(this.mTOKEN);
       let blob = new Blob([captcha], {type: 'image/svg+xml'});
       let url = URL.createObjectURL(blob);
       this.captcha=captcha;
       this.captchaUrl=url;
       this.availableCenter=availableCenter;
+      var audio=new Audio("/assets/beep.mp3");
+      audio.play();
     }catch(err){
       this.resetToken();
     }
@@ -95,31 +101,40 @@ export class BookerComponent implements OnInit {
   async book(){
     let captcha:string=this.inpCaptcha.value.toString();
     let reqBeneficiaryIds = [];
+    let benifNames="";
     let dose="1";
     this.userData.beneficiary_dtls.forEach(beneficiary_dtl => {
       if(beneficiary_dtl.status=="Partially Vaccinated"){
         dose="2";
       }
       reqBeneficiaryIds.push(beneficiary_dtl.bref_id);
+      benifNames+=" , "+beneficiary_dtl.name+"";
     });
     try{
-      let bookRes=await this.networkService.book(this.TOKEN,{
+      let trySlot=this.availableCenter.slots[Math.floor(Math.random() * this.availableCenter.slots.length)]
+      let bookRes=await this.networkService.book(this.mTOKEN,{
         captcha,
         beneficiaries:reqBeneficiaryIds,
         dose:dose,
         center_id:this.availableCenter.center_id,
         session_id:this.availableCenter.session_id,
-        slot:this.availableCenter.slots[0]
+        slot:trySlot
       });
       if(bookRes.length>0){
-        this.success();
+
+        this.success(benifNames,trySlot,this.availableCenter.name);
       }
     }catch(err){
       this.resetToken();
     }
   }
 
-  success(){
+  async success(names:string,slot:string,centreName:string){
+    await this.storageService.set("AN_DATA_NAMES",names);
+    await this.storageService.set("AN_DATA_SLOT",slot);
+    await this.storageService.set("AN_DATA_CENTRE",centreName);
+
+    this.router.navigateByUrl('success');
 
   }
 
@@ -152,7 +167,7 @@ export class BookerComponent implements OnInit {
                 'center_id': center['center_id'],
                 'available': session.available_capacity_dose1,
                 'date': session['date'],
-                'slots': session['slots'][Math.floor(Math.random() * session['slots'].length)],
+                'slots': session['slots'],
                 'session_id': session['session_id']
               };
               //break;
@@ -184,8 +199,8 @@ export class BookerComponent implements OnInit {
     
     let response=await this.networkService.verifyOtp(otp,this.txnId);
     if(response && response.token){
-      this.TOKEN=response.token;
-      this.storageService.set("token"+this.processId,this.TOKEN);
+      this.mTOKEN=response.token;
+      this.storageService.set("token"+this.processId,this.mTOKEN);
       
       this.start();
     }
@@ -194,7 +209,7 @@ export class BookerComponent implements OnInit {
   async resetToken(){
     this.timerCounter=0;
     await this.storageService.set("token"+this.processId,"");
-    this.TOKEN="";
+    this.mTOKEN="";
   }
 
   getSantizeUrl(url : string) {
@@ -204,6 +219,7 @@ export class BookerComponent implements OnInit {
   timer(){
     setTimeout(()=>{
       ++this.timerCounter;
+      this.storageService.count("COUNTER_PROCESS_RUN"+this.processId);
       this.timer();
     }, 1000)
   }
