@@ -7,6 +7,9 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root'
 })
 export class StorageService {
+
+  public APP_VERSION="1.0";
+
   private _storage: Storage | null = null;
   public newSms:BehaviorSubject<string>=new BehaviorSubject('');
   constructor(

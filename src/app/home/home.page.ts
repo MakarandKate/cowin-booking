@@ -119,6 +119,7 @@ export class HomePage {
   }
 
   getSelectAreaBy(event){
+    this.locationArray=[];
     this.selectAreaByValue=event.target.value;
     if(this.selectAreaByValue == "2"){
       this.isByDistrict = true;
@@ -137,6 +138,7 @@ export class HomePage {
   }
 
   getDistrict(event){
+  
     this.selectedDistrictArray=JSON.parse("["+event.target.value.toString()+"]");
     this.locationArray=this.selectedDistrictArray;
   }
@@ -170,6 +172,7 @@ export class HomePage {
   getPincode(event){
     let pincode=event.target.value.split(",");
     this.pincodeArray=[];
+    this.locationArray=[];
     pincode.forEach((pin,i) => {
        this.pincodeArray.push({
         'pincode' : pin,

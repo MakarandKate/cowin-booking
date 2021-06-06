@@ -8,7 +8,7 @@ import { StorageService } from './storage.service';
 })
 export class NetworkService {
 
-  private API_SECRET="U2FsdGVkX1+z/4Nr9nta+2DrVJSv7KS6VoQUSQ1ZXYDx/CJUkWxFYG6P3iM/VW+6jLQ9RDQVzp/RcZ8kbT41xw==";
+  private API_SECRET="";
 
   private HEADERS={
     "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
@@ -38,7 +38,40 @@ export class NetworkService {
     private storageService:StorageService,
   ) { }
 
-  
+  setApiSecret(secret:string){
+    this.API_SECRET=secret;
+  }
+
+  checkVersion():Promise<any>{
+   
+    return new Promise((resolve,reject)=>{
+      
+      let requestOptions:any = {
+        method: 'GET',
+        redirect: 'follow'
+      };
+      fetch("https://api.npoint.io/cf2ee5529084b6b1a790", requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        try{
+          let bObj=JSON.parse(result);
+          if(bObj.appActive=="1"){
+            this.setApiSecret(bObj.secret_key);
+            resolve(bObj)
+          }else{
+            alert("App is expired. Uninstall the app");
+          }
+        }catch(err){
+          
+          reject(err)
+        }
+      })
+      .catch(error => {
+        
+        reject(error);
+      })
+    });
+  }
 
   generateHeader(){
     let apiHeaders = new Headers();
