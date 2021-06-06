@@ -170,7 +170,18 @@ export class NetworkService {
       fetch(this.URLS.book, requestOptions)
       .then(async response => {
         if(response.status==200){
-          resolve(await response.text())
+          try{
+            let resObj=JSON.parse(await response.text());
+            if(resObj.appointment_confirmation_no){
+              resolve(resObj.appointment_confirmation_no)
+            }else{
+              reject("")
+            }
+          }catch(err){
+            reject("")
+          }
+          
+          
         }else{
           reject(await response.text());
         }
@@ -310,8 +321,8 @@ export class NetworkService {
   }
 
   getPinCalender(token:string, userData){
-    // district_id={0}&date={1}
-
+    
+    console.log("getPinCalender",userData)
     return new Promise(async (resolve,reject)=>{
       try{
         let date=Util.getDate();
@@ -326,11 +337,18 @@ export class NetworkService {
         };
         let resultArray=[];
         for(let i=0;i<userData.location_dtls.length;i++){
-          let apiResponse=await fetch(this.URLS.calenderDistrict+`?district_id=${userData.location_dtls[i].district_id}&date=${date}${vaccineType}`, requestOptions)
+          let apiResponse=await fetch(this.URLS.calenderPincode+`?pincode=${userData.location_dtls[i].pincode}&date=${date}${vaccineType}`, requestOptions)
           
-          let responseObj=await apiResponse.json();
-          
-          resultArray.push(responseObj);
+          if(apiResponse.status==200){
+            let responseObj=await apiResponse.json();
+            if(responseObj.centers){
+              resultArray.push(responseObj.centers);
+            }else{
+              reject("");
+            }
+          }else{
+            reject("");
+          }
         }
         resolve(resultArray);
       }catch(err){

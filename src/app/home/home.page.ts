@@ -37,7 +37,12 @@ export class HomePage {
     private storageService:StorageService,
     private router:Router,
   ) {
-
+    this.storageService.newSms.subscribe((otp)=>{
+     
+      if(otp && otp.length>0){
+        this.inpOTP.value=otp;
+      }
+    });
   }
 
   async getUserData(){
@@ -164,14 +169,13 @@ export class HomePage {
 
   getPincode(event){
     let pincode=event.target.value.split(",");
-    console.log(pincode);
+    this.pincodeArray=[];
     pincode.forEach((pin,i) => {
        this.pincodeArray.push({
         'pincode' : pin,
         'alert_freq': 440 + ((2 * i) * 110)
        })
     });
-    console.log(this.pincodeArray);
     this.locationArray=this.pincodeArray;
   }
 
@@ -189,6 +193,7 @@ export class HomePage {
         'fee_type': this.selectedvaccineFeeType
       }
       await this.storageService.set("userData",userDataObj);
+      console.log(userDataObj);
     
       this.router.navigateByUrl("process");
     }else{

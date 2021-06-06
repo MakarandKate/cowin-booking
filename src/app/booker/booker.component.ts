@@ -18,6 +18,7 @@ export class BookerComponent implements OnInit {
   captcha:string='';
   captchaUrl='';
   availableCenter;
+  timerCounter : number = 0;
   
   @ViewChild("inpOTP",{static:false})inpOTP:IonInput;
   @ViewChild("inpCaptcha",{static:false})inpCaptcha:IonInput;
@@ -39,19 +40,29 @@ export class BookerComponent implements OnInit {
     this.storageService.newSms.subscribe((smsText)=>{
       if(this.TOKEN=="" && this.otpRequested==true){
         this.inpOTP.value=smsText;
+        this.initVerifyOtp();
       }
     });
   }
-
-  async start(){
+  start(){
+    this.timer();
+    this.startProcess();
+  }
+  async startProcess(){
+    
     try{
-      let resultsArray=await this.networkService.getDistrictCalender(this.TOKEN,this.userData);
+      let resultsArray;
+      if(this.userData.search_option == "1"){
+        resultsArray=await this.networkService.getPinCalender(this.TOKEN,this.userData);
+      }else{
+        resultsArray=await this.networkService.getDistrictCalender(this.TOKEN,this.userData);
+      }
       let availableCenter=this.checkAvailable(resultsArray);
-      if(availableCenter){
+      if(availableCenter.name){
         this.initBook(availableCenter);
       }else{
         setTimeout(()=>{
-          this.start();
+          this.startProcess();
         },10000);
       }
     }catch(err){
@@ -81,49 +92,83 @@ export class BookerComponent implements OnInit {
     }
   }
 
-  book(){
+  async book(){
     let captcha:string=this.inpCaptcha.value.toString();
-    this.networkService.book(this.TOKEN,{
-      captcha,
-      beneficiaries:[],
-      dose:1,
-      center_id:this.availableCenter.center_id,
-      session_id:this.availableCenter.session_id,
-      slot:this.availableCenter.slots[0]
+    let reqBeneficiaryIds = [];
+    let dose="1";
+    this.userData.beneficiary_dtls.forEach(beneficiary_dtl => {
+      if(beneficiary_dtl.status=="Partially Vaccinated"){
+        dose="2";
+      }
+      reqBeneficiaryIds.push(beneficiary_dtl.bref_id);
     });
+    try{
+      let bookRes=await this.networkService.book(this.TOKEN,{
+        captcha,
+        beneficiaries:reqBeneficiaryIds,
+        dose:dose,
+        center_id:this.availableCenter.center_id,
+        session_id:this.availableCenter.session_id,
+        slot:this.availableCenter.slots[0]
+      });
+      if(bookRes.length>0){
+        this.success();
+      }
+    }catch(err){
+      this.resetToken();
+    }
+  }
+
+  success(){
+
   }
 
   checkAvailable(resultsArray){
-    let availableCenter;
+    let dose="1";
+    this.userData.beneficiary_dtls.forEach(beneficiary_dtl => {
+      if(beneficiary_dtl.status=="Partially Vaccinated"){
+        dose="2";
+      }
+    });
+    let availableCenter:any={count:0};
     for(let r=0;r<resultsArray.length;r++){
       let centers=resultsArray[r];
       for(let c=0;c<centers.length;c++){
         let center=centers[c];
-        let sessions=center.sessions;
-        for(let s=0;s<sessions.length;s++){
-          let session=sessions[s];
-          if(session.available_capacity_dose1>this.userData.beneficiary_dtls.length){
-            availableCenter={
-              'name': center['name'],
-              'district': center['district_name'],
-              'pincode': center['pincode'],
-              'center_id': center['center_id'],
-              'available': session.available_capacity_dose1,
-              'date': session['date'],
-              'slots': session['slots'],
-              'session_id': session['session_id']
-            };
-            break;
+        if(this.userData.fee_type=="ANY" 
+        || this.userData.fee_type.toLowerCase()==center.fee_type.toLowerCase()){
+          let sessions=center.sessions;
+          for(let s=0;s<sessions.length;s++){
+            let session=sessions[s];
+            if(
+              session[`available_capacity_dose${dose}`]>this.userData.beneficiary_dtls.length 
+              && session[`available_capacity_dose${dose}`]>availableCenter.count
+            ){
+              availableCenter={
+                count:session[`available_capacity_dose${dose}`],
+                'name': center['name'],
+                'district': center['district_name'],
+                'pincode': center['pincode'],
+                'center_id': center['center_id'],
+                'available': session.available_capacity_dose1,
+                'date': session['date'],
+                'slots': session['slots'][Math.floor(Math.random() * session['slots'].length)],
+                'session_id': session['session_id']
+              };
+              //break;
+            }
           }
         }
-        if(availableCenter){
-          break;
-        }
+        
+        // if(availableCenter){
+        //   break;
+        // }
       }
-      if(availableCenter){
-        break;
-      }
+      // if(availableCenter){
+      //   break;
+      // }
     }
+    delete availableCenter.count;
     return availableCenter;
   }
 
@@ -141,17 +186,26 @@ export class BookerComponent implements OnInit {
     if(response && response.token){
       this.TOKEN=response.token;
       this.storageService.set("token"+this.processId,this.TOKEN);
+      
       this.start();
     }
   }
 
   async resetToken(){
+    this.timerCounter=0;
     await this.storageService.set("token"+this.processId,"");
     this.TOKEN="";
   }
 
   getSantizeUrl(url : string) {
     return this.sanitizer.bypassSecurityTrustUrl(url);
+  }
+
+  timer(){
+    setTimeout(()=>{
+      ++this.timerCounter;
+      this.timer();
+    }, 1000)
   }
 
 }

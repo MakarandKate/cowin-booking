@@ -10,6 +10,7 @@
 </div>
 <div [ngClass]="{hidden:!TOKEN.length}">
   <img class="loader" [ngClass]="{hidden:captcha.length}" src="/assets/loader.svg" />
+  <p>Process is running since {{timerCounter}} s.</p>
   <div class="captcha-holder" [ngClass]="{hidden:!captcha.length}">
     <img [src]="getSantizeUrl(captchaUrl)"/>
     <ion-item >
@@ -18,5 +19,5 @@
     </ion-item>
     <ion-button color="success" expand="block" shape="round" (click)="book()">BOOK</ion-button>
   </div>
-  <p>Process Is Running</p>
+  
 </div>

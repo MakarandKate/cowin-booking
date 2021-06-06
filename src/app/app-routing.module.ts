@@ -19,6 +19,10 @@ const routes: Routes = [
     path: 'process',
     loadChildren: () => import('./process/process.module').then( m => m.ProcessPageModule)
   },
+  {
+    path: 'success',
+    loadChildren: () => import('./success/success.module').then( m => m.SuccessPageModule)
+  },
 ];
 
 @NgModule({

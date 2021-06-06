@@ -1,18 +1,42 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Information</ion-title>
+    <ion-title>Important Information</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <ion-card>
-    <ion-label>
-      Register on Cowin Website (https://www.cowin.gov.in/home) and fill all
-      beneficiary details. This application is only for booking purposes and 
-      not for registration. 
-    </ion-label>
-  </ion-card>
+    <div class=container>
+      <ul>
+        <li>
+          This is a proof of concept project. 
+          I do NOT endorse or condone, in any shape or form, automating any monitoring/booking tasks. 
+          Use at your own risk.
+        </li>
+        <li>
+          This CANNOT book slots automatically. It doesn't skip any of the steps that a normal user would have to take on the official portal. You will still have to enter the OTP and Captcha.
+        </li>
+        <li>
+          Do NOT use unless all the beneficiaries selected are supposed to get the same vaccine and dose.
+        </li>
+        <li>
+          There is no option to register new mobile or add beneficiaries. This can be used only after beneficiary has been added through the official app/site.
+        </li>  
+        <li>
+          This goes without saying but, once you get your shot, please do help out any underprivileged people around you who may not have a laptop or the know-how. For instance any sort of domestic help, or the staff in your local grocery store, or literally the thousands of people who don't have the knowledge or luxury we do.
+        </li>
+        <li>
+          API Details (read the first paragraph at least): https://apisetu.gov.in/public/marketplace/api/cowin/cowin-public-v2
+        </li>
+        <li>
+          And finally, I know code quality isn't great. Suggestions are welcome.
+        </li>
+        <li>
+          Reference : https://github.com/pallupz/covid-vaccine-booking
+        </li>
+      </ul>
+
+    </div>
 </ion-content>
 <ion-footer>
-  <ion-button expand="block" (click)="goToHome()">Continue</ion-button>
+  <ion-button expand="block" (click)="goToHome()">I Accept</ion-button>
 </ion-footer>

@@ -9,7 +9,8 @@
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "cap-sync": "npm i && ionic build && npx cap sync"
   },
   "private": true,
   "dependencies": {
@@ -29,6 +30,7 @@
     "@ionic/angular": "^5.5.2",
     "@ionic/storage-angular": "^3.0.6",
     "cordova-plugin-background-mode": "^0.7.3",
+    "cordova-plugin-device": "^2.0.3",
     "cordova-plugin-sms-receive": "^1.0.2",
     "cordova-sqlite-storage": "^6.0.0",
     "jssha": "^3.2.0",
