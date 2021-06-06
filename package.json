@@ -10,7 +10,8 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "cap-sync": "npm i && ionic build && npx cap sync"
+    "cap-sync": "npm i && ionic build && npx cap sync",
+    "cap-sync-prod": "npm i && ionic build --prod && npx cap sync"
   },
   "private": true,
   "dependencies": {
