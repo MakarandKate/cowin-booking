@@ -14,7 +14,7 @@
   </ion-header>
 
   <div id="container">
-    <div [ngClass]="{hidden : TOKEN.length}">
+    <div [ngClass]="{hidden : mTOKEN.length}">
       <ion-item>
         <ion-label position="floating">Phone Number</ion-label>
         <ion-input #inpPhoneNumber></ion-input>
@@ -27,7 +27,7 @@
       <ion-button expand="block" (click)="initVerifyOtp()">VERIFY OTP</ion-button>
     </div>
     
-    <div [ngClass]="{hidden : !TOKEN.length}">
+    <div [ngClass]="{hidden : !mTOKEN.length}">
       <ion-label>Please only choose 18 to 44 OR 45+.Do not combine two age groups. And do not combine two different type vaccines.</ion-label>
       <ion-grid>
         <ion-card *ngFor="let ben of beneficiary">
