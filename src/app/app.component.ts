@@ -18,7 +18,7 @@ export class AppComponent {
   ) {
     
     if(this.platform.is("hybrid")){
-      this.backgroundMode.enable();
+      //this.backgroundMode.enable();
       SMSReceive.startWatch(
         () => {
           document.addEventListener('onSMSArrive', (e: any) => {

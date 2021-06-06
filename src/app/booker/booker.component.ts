@@ -64,7 +64,6 @@ export class BookerComponent implements OnInit {
         resultsArray=await this.networkService.getDistrictCalender(this.mTOKEN,this.userData);
       }
       let availableCenter=this.checkAvailable(resultsArray);
-      console.debug("availableCenter",availableCenter);
       if(availableCenter.name){
         this.initBook(availableCenter);
       }else{
@@ -147,7 +146,6 @@ export class BookerComponent implements OnInit {
     let dose="1";
     let ageGroup=999;
     this.userData.beneficiary_dtls.forEach(beneficiary_dtl => {
-      console.debug("beneficiary_dtl",beneficiary_dtl)
       if(ageGroup>beneficiary_dtl.age){
         ageGroup=beneficiary_dtl.age;
       }
@@ -208,7 +206,7 @@ export class BookerComponent implements OnInit {
   async initVerifyOtp(){
     this.otpRequested=false;
     let otp:string=this.inpOTP.value.toString();
-    
+    this.cd.detectChanges();
     let response=await this.networkService.verifyOtp(otp,this.txnId);
     if(response && response.token){
       this.mTOKEN=response.token;
@@ -230,10 +228,11 @@ export class BookerComponent implements OnInit {
 
   timer(){
     setTimeout(()=>{
-      ++this.timerCounter;
+      this.timerCounter+=2;
       this.storageService.count("COUNTER_PROCESS_RUN"+this.processId);
+      this.cd.detectChanges();
       this.timer();
-    }, 1000)
+    }, 2000)
   }
 
 }
